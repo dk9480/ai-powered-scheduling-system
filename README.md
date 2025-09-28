@@ -16,9 +16,6 @@ A sophisticated multi-service backend system that intelligently processes natura
 ## 🏗️ System Architecture
 
 ### **Multi-Service Architecture**
-
-
-
 ┌─────────────────┐ ┌──────────────────┐ ┌──────────────────┐
 │ Client │ │ Node.js │ │ Python Flask │
 │ (Postman/ │───▶│ Express.js │───▶│ Microservices │
@@ -79,9 +76,6 @@ git clone https://github.com/yourusername/ai-appointment-scheduler.git
 cd ai-appointment-scheduler
 
 
-
-
-
 2. Backend Setup (Node.js)
 # Navigate to backend directory
 cd backend
@@ -99,7 +93,6 @@ node server.js
 
 3. Python Services Setup
 OCR Service (Port 5001)
-
 cd python-services/ocr-services
 
 # Install Python dependencies
@@ -107,7 +100,6 @@ pip install flask flask-cors easyocr pillow requests numpy torch torchvision ope
 
 # Start OCR service
 python app.py
-
 
 
 Entity Service (Port 5002)
@@ -118,7 +110,6 @@ pip install flask flask-cors
 
 # Start Entity service
 python app.py
-
 
 
 📚 API Documentation
@@ -132,6 +123,8 @@ Entity Service: http://localhost:5002
 
 Health Check Endpoints
 GET /health
+
+Response:
 {
   "status": "OK",
   "timestamp": "2024-01-15T10:30:00.000Z",
@@ -168,6 +161,7 @@ Success Response:
 }
 
 
+
 2. Upload and Process Image
 POST /api/appointments/upload
 Content-Type: multipart/form-data
@@ -180,10 +174,8 @@ image: File upload (JPEG, PNG, GIF, BMP - max 5MB)
 3. Processing History
 GET /api/appointments/history
 
-
 🔬 API Testing Guide
 Postman Collection Setup
-
 Environment Variables
 {
   "base_url": "http://localhost:5000",
@@ -212,7 +204,6 @@ Content-Type: application/json
   "imageUrl": "https://example.com/appointment-note.jpg"
 }
 
-
 4. Upload Image File
 POST {{base_url}}/api/appointments/upload
 Content-Type: multipart/form-data
@@ -220,72 +211,10 @@ Content-Type: multipart/form-data
 Form Data:
 - Key: image, Type: File
 
+<img width="969" height="405" alt="image" src="https://github.com/user-attachments/assets/374a4485-9cf8-47c5-b001-fc9b8d551ed3" />
+<img width="922" height="326" alt="image" src="https://github.com/user-attachments/assets/b91dd14d-d0b5-4fad-8bed-a0e140131e6b" />
+<img width="965" height="476" alt="image" src="https://github.com/user-attachments/assets/369a9abe-1272-4530-9f0b-479e9a9353fb" />
 
-cURL Commands for Testing
-Basic Text Processing
-# Test 1: Basic appointment
-curl -X POST http://localhost:5000/api/appointments/process \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Book dentist next Friday at 3pm"}'
-
-# Test 2: 6pm time conversion
-curl -X POST http://localhost:5000/api/appointments/process \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Doctor appointment tomorrow at 6pm"}'
-
-# Test 3: Different department
-curl -X POST http://localhost:5000/api/appointments/process \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Dermatologist next Monday at 2:30pm"}'
-
-# Test 4: Guardrail trigger
-curl -X POST http://localhost:5000/api/appointments/process \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Book appointment"}'
-
-
-Image Processing
-# Using image URL
-curl -X POST http://localhost:5000/api/appointments/process \
-  -H "Content-Type: application/json" \
-  -d '{"imageUrl": "https://example.com/medical-note.jpg"}'
-
-
-Postman Test Scripts
-// Test for successful appointment processing
-pm.test("Status code is 200", function () {
-    pm.response.to.have.status(200);
-});
-
-pm.test("Valid appointment structure", function () {
-    const response = pm.response.json();
-    
-    if (response.status === "ok") {
-        pm.expect(response.appointment).to.be.an('object');
-        pm.expect(response.appointment.department).to.be.a('string');
-        pm.expect(response.appointment.date).to.match(/^\d{4}-\d{2}-\d{2}$/);
-        pm.expect(response.appointment.time).to.match(/^\d{2}:\d{2}$/);
-        pm.expect(response.appointment.tz).to.equal("Asia/Kolkata");
-        pm.expect(response.confidence).to.be.a('number').above(0.5);
-    }
-});
-
-// Test for guardrail responses
-pm.test("Guardrail response format", function () {
-    const response = pm.response.json();
-    if (response.status === "needs_clarification") {
-        pm.expect(response.message).to.include("detect");
-        pm.expect(response.message).to.be.a('string');
-    }
-});
-
-
-
-
-
-<img width="886" height="401" alt="image" src="https://github.com/user-attachments/assets/deac807c-57e1-4712-82eb-4aaeb3c86e69" />
-<img width="882" height="315" alt="image" src="https://github.com/user-attachments/assets/9c16986c-fa11-4b6d-a8b2-271f735b5c6e" />
-<img width="1093" height="488" alt="image" src="https://github.com/user-attachments/assets/14d0d28b-4c35-4304-8a85-280a26974692" />
 
 🔧 Technical Implementation Details
 OCR Service Features
@@ -297,6 +226,55 @@ Text Cleaning: Removes extra whitespace and normalizes text
 
 Confidence Scoring: Average confidence across all detected text regions
 
+
+
+Entity Extraction Patterns
+# Date patterns
+date_patterns = [
+    r'(next|this|coming)\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)',
+    r'\b(tomorrow|today|yesterday)\b',
+    r'\b(next\s+week)\b',
+    r'\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b'
+]
+
+# Time patterns  
+time_patterns = [
+    r'\b(\d{1,2}:\d{2}\s*(am|pm)?)\b',
+    r'\b(\d{1,2}\s*(am|pm))\b',
+    r'\b(\d{1,2})\b(?![:\d])'
+]
+
+
+Normalization Logic
+Date Calculation: Dynamic calculation based on current date
+
+Time Conversion: 12-hour to 24-hour format with AM/PM handling
+
+Timezone Support: Fixed to Asia/Kolkata timezone
+
+Fallback Mechanisms: Default values when parsing fails
+
+
+
+📊 Expected Output Examples
+Successful Processing
+Input: "Book dentist next Friday at 6pm"
+{
+  "appointment": {
+    "department": "Dentistry",
+    "date": "2024-01-19",
+    "time": "18:00",
+    "tz": "Asia/Kolkata"
+  },
+  "status": "ok",
+  "confidence": 0.88,
+  "extracted_text": "Book dentist next Friday at 6pm",
+  "processing_steps": {
+    "ocr_confidence": 1.0,
+    "entity_confidence": 0.85,
+    "normalization_confidence": 0.90
+  }
+}
 
 
 📁 Project Structure
@@ -321,7 +299,7 @@ ai-appointment-scheduler/
 
 
 🎯 Quick Start
-Start all services in separate terminals:
+1. Start all services in separate terminals:
 # Terminal 1: OCR Service
 cd python-services/ocr-services && python app.py
 
@@ -332,6 +310,15 @@ cd python-services/entity-services && python app.py
 cd backend && node server.js
 
 
+2. Test basic functionality:
+curl -X POST http://localhost:5000/api/appointments/process \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Book dentist next Friday at 6pm"}'
+
+
+3. Verify 6pm converts to 18:00 in response
+
+
 🙏 Acknowledgments
 EasyOCR for robust text extraction capabilities
 
@@ -340,7 +327,6 @@ Flask community for microservice best practices
 Express.js team for reliable web framework
 
 Postman for comprehensive API testing tools
-
 
 
 
